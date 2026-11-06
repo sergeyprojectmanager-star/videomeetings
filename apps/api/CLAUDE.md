@@ -40,6 +40,7 @@ Backend: NestJS 12, TypeScript, ESM (`"type": "module"`).
 - Passwords are hashed by `PasswordHasher` (scrypt) from `@nestjs/authentication`, used standalone without `AuthenticationModule`, so there is no global guard or session machinery. If protected routes are added later, decide how to guard them (e.g. a JWT guard) before registering `AuthenticationModule`.
 - E-mails are trimmed and lower-cased by the Zod schemas in `src/auth/auth.schemas.ts` before they reach the database; `users.email` is unique. Registration relies on that constraint (`onConflictDoNothing`) rather than a prior lookup.
 - Request bodies are validated by `StandardSchemaValidationPipe` (bound as `APP_PIPE` in `AppModule`), so e2e tests that boot `AppModule` get validation without `main.ts`.
+- Unit tests (`*.spec.ts` next to the code) cover handlers, `AccessTokenService`, the controller and the Zod schemas with `vi.fn()` mocks; handlers are built with `new`, no Nest testing module. `UsersService` has no unit test: it is a thin Drizzle wrapper, covered by the e2e tests.
 - e2e tests (`test/auth.e2e-spec.ts`) use the real database, unique `e2e-*@example.test` e-mails that they delete afterwards, a cheap `PasswordHasher` override, and a test `JWT_SECRET` from `vitest.config.e2e.ts`.
 
 ## Rules
