@@ -8,7 +8,7 @@ Backend: NestJS 12, TypeScript, ESM (`"type": "module"`).
 
 - `src/` — application code (`main.ts`, `app.module.ts`, controllers, services, `*.spec.ts` next to the code)
 - `test/` — e2e tests (`*.e2e-spec.ts`)
-- `src/auth/` — registration and login (`POST /auth/register`, `POST /auth/login`), JWT issuing; `src/users/` — user persistence
+- `src/auth/` — registration and login (`POST /auth/register`, `POST /auth/login`), JWT issuing, built on CQRS (`commands/`, `queries/`); `src/users/` — user persistence
 - `src/db/schema.ts` — Drizzle schema (all tables are declared or re-exported here)
 - `drizzle/` — generated SQL migrations (commit them)
 - `nest-cli.json`, `tsconfig*.json`, `.oxlintrc.json`, `vitest.config*.ts`, `drizzle.config.ts` — configs
@@ -34,6 +34,8 @@ Backend: NestJS 12, TypeScript, ESM (`"type": "module"`).
 ## Authentication
 
 - `AuthModule` (`src/auth/`): `POST /auth/register` (201) and `POST /auth/login` (200) take `{ email, password }` and return `{ accessToken }`. Errors: 400 invalid body, 409 e-mail taken, 401 bad credentials (identical for an unknown e-mail and a wrong password).
+- The module follows CQRS (`@nestjs/cqrs`, `CqrsModule.forRoot()` in `AppModule`). The controller stays thin and only dispatches to the buses: registration is a command (`RegisterUserCommand` → `RegisterUserHandler`, `CommandBus`), login is a query (`LoginQuery` → `LoginHandler`, `QueryBus`) because it changes no state. Each command/query and its handler live in `commands/` / `queries/`; handlers are registered as providers in `AuthModule`. New use cases follow the same shape; there are no events or sagas yet.
+- `AccessTokenService` is the single place that builds the token payload; both handlers use it.
 - The token is a JWT from `@nestjs/jwt`: HS256, secret from the required `JWT_SECRET`, `sub` = user id, expires in 1 hour.
 - Passwords are hashed by `PasswordHasher` (scrypt) from `@nestjs/authentication`, used standalone without `AuthenticationModule`, so there is no global guard or session machinery. If protected routes are added later, decide how to guard them (e.g. a JWT guard) before registering `AuthenticationModule`.
 - E-mails are trimmed and lower-cased by the Zod schemas in `src/auth/auth.schemas.ts` before they reach the database; `users.email` is unique. Registration relies on that constraint (`onConflictDoNothing`) rather than a prior lookup.

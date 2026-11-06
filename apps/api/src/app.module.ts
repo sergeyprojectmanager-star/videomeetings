@@ -1,4 +1,5 @@
 import { Module, StandardSchemaValidationPipe } from '@nestjs/common';
+import { CqrsModule } from '@nestjs/cqrs';
 import { APP_PIPE } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DrizzleModule } from '@nestjs/drizzle';
@@ -20,6 +21,7 @@ import { AuthModule } from './auth/auth.module.js';
         connection: config.getOrThrow<string>('DATABASE_URL'),
       }),
     }),
+    CqrsModule.forRoot(),
     AuthModule,
   ],
   controllers: [AppController],

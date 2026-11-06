@@ -3,8 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { PasswordHasher } from '@nestjs/authentication';
 import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from '../users/users.module.js';
+import { AccessTokenService } from './access-token.service.js';
 import { AuthController } from './auth.controller.js';
-import { AuthService } from './auth.service.js';
+import { RegisterUserHandler } from './commands/register-user.handler.js';
+import { LoginHandler } from './queries/login.handler.js';
 
 @Module({
   imports: [
@@ -22,7 +24,9 @@ import { AuthService } from './auth.service.js';
   ],
   controllers: [AuthController],
   providers: [
-    AuthService,
+    AccessTokenService,
+    RegisterUserHandler,
+    LoginHandler,
     // Used standalone: only the scrypt hasher is needed, not the package's
     // session machinery (AuthenticationModule).
     { provide: PasswordHasher, useFactory: () => new PasswordHasher() },
