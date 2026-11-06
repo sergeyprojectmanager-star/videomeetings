@@ -17,6 +17,14 @@ Each app has its own `CLAUDE.md` with app-specific rules. Read it before working
 - `npm run format` / `format:check` — Prettier for the whole repository
 - Single app: `npm run <script> -w @video-meetings/web` (or `api`)
 
+## Database
+
+- PostgreSQL 17 runs via `docker-compose.yml` at the root (service `postgres`, container `video-meetings-postgres`, volume `postgres_data`).
+- Start/stop: `docker compose up -d` / `docker compose down` (`down -v` deletes the data).
+- Configuration comes from `.env` (not committed); `.env.example` lists the variables and the `DATABASE_URL` used by the api app. Never commit `.env`.
+- `JWT_SECRET` (signs access tokens) is also required in `.env`; the api app fails fast without it. Apply migrations with `npm run db:migrate -w @video-meetings/api` before running the api or its e2e tests.
+- The api app uses Drizzle ORM (schema in `apps/api/src/db/schema.ts`, migrations in `apps/api/drizzle/`); details are in `apps/api/CLAUDE.md`.
+
 ## Rules
 
 - Language: all documentation and repository content (docs, code comments, commit messages, PR descriptions, identifiers, UI strings unless a product requirement says otherwise) is in English. Replies to the user in chat are in Russian.
