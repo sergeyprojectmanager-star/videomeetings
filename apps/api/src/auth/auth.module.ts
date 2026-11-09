@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from '../users/users.module.js';
 import { AccessTokenService } from './access-token.service.js';
 import { AuthController } from './auth.controller.js';
+import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { RegisterUserHandler } from './commands/register-user.handler.js';
 import { LoginHandler } from './queries/login.handler.js';
 
@@ -23,8 +24,12 @@ import { LoginHandler } from './queries/login.handler.js';
     }),
   ],
   controllers: [AuthController],
+  // JwtModule and JwtAuthGuard are exported so other modules can protect routes
+  // with `@UseGuards(JwtAuthGuard)`.
+  exports: [JwtModule, JwtAuthGuard],
   providers: [
     AccessTokenService,
+    JwtAuthGuard,
     RegisterUserHandler,
     LoginHandler,
     // Used standalone: only the scrypt hasher is needed, not the package's

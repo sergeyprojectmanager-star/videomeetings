@@ -9,6 +9,8 @@ Backend: NestJS 12, TypeScript, ESM (`"type": "module"`).
 - `src/` — application code (`main.ts`, `app.module.ts`, controllers, services, `*.spec.ts` next to the code)
 - `test/` — e2e tests (`*.e2e-spec.ts`)
 - `src/auth/` — registration and login (`POST /auth/register`, `POST /auth/login`), JWT issuing, built on CQRS (`commands/`, `queries/`); `src/users/` — user persistence
+- `src/meetings/` — meetings (`POST /meetings`, `GET /meetings`, `GET /meetings/:id`), also CQRS; protected by `JwtAuthGuard`
+- `docs/cqrs.md` — how CQRS is used (flow, layer responsibilities, anatomy of a use case, how to add one, testing); update it when a command/query is added or the approach changes
 - `src/db/schema.ts` — Drizzle schema (all tables are declared or re-exported here)
 - `drizzle/` — generated SQL migrations (commit them)
 - `nest-cli.json`, `tsconfig*.json`, `.oxlintrc.json`, `vitest.config*.ts`, `drizzle.config.ts` — configs
@@ -34,14 +36,22 @@ Backend: NestJS 12, TypeScript, ESM (`"type": "module"`).
 ## Authentication
 
 - `AuthModule` (`src/auth/`): `POST /auth/register` (201) and `POST /auth/login` (200) take `{ email, password }` and return `{ accessToken }`. Errors: 400 invalid body, 409 e-mail taken, 401 bad credentials (identical for an unknown e-mail and a wrong password).
-- The module follows CQRS (`@nestjs/cqrs`, `CqrsModule.forRoot()` in `AppModule`). The controller stays thin and only dispatches to the buses: registration is a command (`RegisterUserCommand` → `RegisterUserHandler`, `CommandBus`), login is a query (`LoginQuery` → `LoginHandler`, `QueryBus`) because it changes no state. Each command/query and its handler live in `commands/` / `queries/`; handlers are registered as providers in `AuthModule`. New use cases follow the same shape; there are no events or sagas yet.
+- The module follows CQRS (see [docs/cqrs.md](docs/cqrs.md)): registration is a command (`RegisterUserCommand` → `RegisterUserHandler`), login is a query (`LoginQuery` → `LoginHandler`) because it changes no state.
 - `AccessTokenService` is the single place that builds the token payload; both handlers use it.
 - The token is a JWT from `@nestjs/jwt`: HS256, secret from the required `JWT_SECRET`, `sub` = user id, expires in 1 hour.
 - Passwords are hashed by `PasswordHasher` (scrypt) from `@nestjs/authentication`, used standalone without `AuthenticationModule`, so there is no global guard or session machinery. If protected routes are added later, decide how to guard them (e.g. a JWT guard) before registering `AuthenticationModule`.
 - E-mails are trimmed and lower-cased by the Zod schemas in `src/auth/auth.schemas.ts` before they reach the database; `users.email` is unique. Registration relies on that constraint (`onConflictDoNothing`) rather than a prior lookup.
 - Request bodies are validated by `StandardSchemaValidationPipe` (bound as `APP_PIPE` in `AppModule`), so e2e tests that boot `AppModule` get validation without `main.ts`.
 - Unit tests (`*.spec.ts` next to the code) cover handlers, `AccessTokenService`, the controller and the Zod schemas with `vi.fn()` mocks; handlers are built with `new`, no Nest testing module. `UsersService` has no unit test: it is a thin Drizzle wrapper, covered by the e2e tests.
+- `JwtAuthGuard` (`src/auth/jwt-auth.guard.ts`) protects routes: `@UseGuards(JwtAuthGuard)` checks `Authorization: Bearer <token>` (HS256 only, signature and expiry) and answers 401 otherwise; it sets `request.user = { id }`, read with the `@CurrentUser()` decorator. `AuthModule` exports the guard and `JwtModule`, so a feature module imports `AuthModule` to use it.
 - e2e tests (`test/auth.e2e-spec.ts`) use the real database, unique `e2e-*@example.test` e-mails that they delete afterwards, a cheap `PasswordHasher` override, and a test `JWT_SECRET` from `vitest.config.e2e.ts`.
+
+## Meetings
+
+- `MeetingsModule` (`src/meetings/`): all routes are behind `JwtAuthGuard` and scoped to the token's user. `POST /meetings` `{ title, date, participants }` (201), `GET /meetings`, `GET /meetings/:id`. Responses are `{ id, title, date, participants }` (the owner is not exposed).
+- Same CQRS shape as auth ([docs/cqrs.md](docs/cqrs.md)): `CreateMeetingCommand`, `ListMeetingsQuery`, `GetMeetingQuery` with handlers in `commands/` / `queries/`; `MeetingsService` is the Drizzle wrapper. Validation is in `meetings.schemas.ts`: non-blank trimmed `title`, ISO 8601 `date` (parsed into a `Date`), `participants` an array of e-mails (may be empty).
+- The `meetings` table (`owner_id` → `users.id`, `ON DELETE CASCADE`; `participants` is `text[]`). Another user's meeting, an unknown id and a non-UUID id are all 404. The list is ordered by `date`. Being listed as a participant gives no access.
+- e2e tests (`test/meetings.e2e-spec.ts`) follow the auth ones. e2e files run one at a time (`fileParallelism: false`) because they share the database and clean up by e-mail pattern.
 
 ## Rules
 

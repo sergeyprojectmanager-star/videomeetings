@@ -46,6 +46,20 @@ The api app issues JWT access tokens (HS256, signed with `JWT_SECRET` from `.env
 
 Users are stored in the `users` table; passwords are hashed with scrypt. Run `db:migrate` before starting the api or its e2e tests.
 
+## Meetings
+
+All meeting routes require `Authorization: Bearer <accessToken>` (401 otherwise) and only ever see the caller's own meetings:
+
+- `POST /meetings` — `{ "title": "...", "date": "<ISO 8601 date-time>", "participants": ["<e-mail>", ...] }`; creates a meeting (201) and returns `{ id, title, date, participants }`; 400 for an invalid body.
+- `GET /meetings` — the caller's meetings (200), `[]` if none.
+- `GET /meetings/:id` — one meeting (200); 404 if it does not exist, belongs to someone else, or `id` is not a UUID.
+
+Meetings are stored in the `meetings` table (deleted together with their owner).
+
+## Architecture notes
+
+- The api app separates commands (state changes) from queries (reads) with `@nestjs/cqrs`: see [apps/api/docs/cqrs.md](apps/api/docs/cqrs.md).
+
 ## Scripts (from the root)
 
 - `npm run dev` / `dev:web` / `dev:api`

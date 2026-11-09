@@ -7,6 +7,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
+import { MeetingsModule } from './meetings/meetings.module.js';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AuthModule } from './auth/auth.module.js';
     }),
     CqrsModule.forRoot(),
     AuthModule,
+    MeetingsModule,
   ],
   controllers: [AppController],
   providers: [

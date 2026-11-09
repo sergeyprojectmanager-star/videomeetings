@@ -7,6 +7,24 @@ export interface JwtPayload {
   [claim: string]: unknown;
 }
 
+function encodeSegment(value: unknown): string {
+  return Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
+}
+
+/**
+ * Signs a JWT with HS256 over exactly the given payload.
+ *
+ * Meant for building forged or expired tokens in tests; real tokens come from
+ * the API itself.
+ */
+export function signHs256Jwt(payload: JwtPayload, secret: string): string {
+  const signingInput = `${encodeSegment({ alg: 'HS256', typ: 'JWT' })}.${encodeSegment(payload)}`;
+  const signature = createHmac('sha256', secret)
+    .update(signingInput)
+    .digest('base64url');
+  return `${signingInput}.${signature}`;
+}
+
 function decodeSegment(segment: string): unknown {
   return JSON.parse(Buffer.from(segment, 'base64url').toString('utf8'));
 }

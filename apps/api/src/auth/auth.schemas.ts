@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // E-mails are compared case-insensitively and ignoring surrounding spaces, so
 // they are normalized before validation and storage.
-const email = z.string().trim().toLowerCase().pipe(z.email());
+export const email = z.string().trim().toLowerCase().pipe(z.email());
 
 export const registerSchema = z.object({
   email,
