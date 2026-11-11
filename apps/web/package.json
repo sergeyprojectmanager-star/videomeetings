@@ -11,6 +11,9 @@
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@gravity-ui/icons": "^2.23.1",
+    "@heroui/react": "^3.2.7",
+    "@heroui/styles": "^3.2.7",
     "next": "16.4.5",
     "react": "19.3.0",
     "react-dom": "19.3.0"
