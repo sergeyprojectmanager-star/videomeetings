@@ -29,6 +29,7 @@ Backend: NestJS 12, TypeScript, ESM (`"type": "module"`).
 
 - PostgreSQL via Drizzle ORM (`@nestjs/drizzle`, `drizzle-orm` v1 rc, `pg` driver); `DrizzleModule` is registered in `src/app.module.ts`.
 - Configuration: `ConfigModule` loads `.env` (this app's dir or the repo root); `DATABASE_URL` is required and the app fails fast without it. Copy `.env.example` to `.env` at the root.
+- The HTTP port comes from `PORT` (`main.ts`, default 3000). `.env.example` sets it to 3001 so the api does not clash with the web dev server on 3000 when both run with `npm run dev`.
 - Inject the database with `@InjectDrizzle() private readonly db: NodePgDatabase`; import tables from `src/db/schema.ts`.
 - Change the schema in `src/db/schema.ts`, then run `db:generate` and `db:migrate`. Never edit generated migrations by hand.
 - The database must be running (`docker compose up -d` at the root) for `start:dev`, `db:migrate` and e2e tests. e2e tests also need the migrations applied (`npm run db:migrate`).
