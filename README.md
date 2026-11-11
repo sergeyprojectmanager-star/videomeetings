@@ -18,9 +18,11 @@ Web runs on http://localhost:3000 and the api on http://localhost:3001 (`PORT` i
 
 ## Git hooks
 
-[Husky](https://typicode.github.io/husky/) installs a `pre-commit` hook (`.husky/pre-commit`) that runs `npm run lint` and `npm run test` for the whole repository (about 7 seconds). If either fails, the commit is not created: fix the problem and commit again.
+[Husky](https://typicode.github.io/husky/) installs a `pre-commit` hook (`.husky/pre-commit`) that runs [lint-staged](https://github.com/lint-staged/lint-staged) and then `npm run test`. If either fails, the commit is not created: fix the problem and commit again.
 
 - The hook is installed by `npm install` (the root `prepare` script runs `husky`), so run it once after cloning.
+- lint-staged lints only the files you are committing, each with its own app's linter: staged `.ts` files in `apps/api` go through `oxlint --type-aware` and staged `.js/.jsx/.mjs/.ts/.tsx` files in `apps/web` through `eslint` (configured in `apps/api/.lintstagedrc.json` and `apps/web/.lintstagedrc.json`; the closest config to a file wins and its tasks run in that app's folder). A lint error in a file you are not committing does not block the commit; `npm run lint` still checks everything.
+- The unit tests always run in full, because a change can break a test of a file you did not touch. They take a couple of seconds.
 - It runs the unit tests only. The api e2e tests need a running database, so run them yourself when needed (see Tests below).
 - Do not skip it with `git commit --no-verify`.
 
