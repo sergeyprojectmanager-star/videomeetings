@@ -22,6 +22,15 @@ Frontend: Next.js 16 (App Router), React 19, Tailwind CSS v4, HeroUI v3 (`@herou
 - `npm run lint` / `npm run lint:fix` — ESLint
 - `npm run typecheck` — `next typegen && tsc --noEmit`
 
+## Definition of done for UI changes
+
+Any change to the UI (pages, components, styles, copy, layout, form behavior) is not finished until both of these are done:
+
+1. **Visual test with Playwright.** Run the app (`dev:web`, plus `dev:api` if the change talks to the api) and use the `playwright-cli` skill to open the affected pages and check the change as a user would: the default state, the error and success states, keyboard use (Tab, Enter) and a mobile width (375px). Take screenshots and look at them; do not rely on lint and typecheck alone.
+2. **UI/UX review with the `ui-ux-pro-max` skill.** Load the skill and review the change against its guidelines (accessibility, touch targets, contrast, forms and feedback, layout and responsiveness), then fix what it finds.
+
+Only after both are done may the task be reported as complete. Say in the final report what was checked and how; if something could not be checked, say that explicitly instead of calling the task done.
+
 ## Rules
 
 - Before writing code, read the relevant section in `node_modules/next/dist/docs/` (see `AGENTS.md`).
