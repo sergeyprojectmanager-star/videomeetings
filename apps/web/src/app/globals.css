@@ -5,3 +5,23 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
+
+:root {
+  /* HeroUI's default accent is 3.7:1 against white, below the 4.5:1 AA minimum
+     for button labels and links. This one (Tailwind blue-600) is about 5.2:1. */
+  --accent: oklch(0.546 0.215 262.9);
+
+  /* Form fields have no border by default; give them one that is at least 3:1
+     against the card so the field boundary is visible (WCAG 1.4.11). */
+  --field-border-width: 1px;
+  --field-border: oklch(0.6 0.01 286);
+}
+
+/* With a field border HeroUI also draws dividers between the prefix, the input
+   and the suffix of an InputGroup; the group's own border is enough. */
+.input-group > .input-group__prefix {
+  border-right-width: 0;
+}
+.input-group > .input-group__suffix {
+  border-left-width: 0;
+}

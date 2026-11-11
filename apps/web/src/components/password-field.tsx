@@ -10,14 +10,17 @@ import {
   Label,
   TextField,
 } from '@heroui/react';
+import { inputGroupClassName } from './field-styles';
 
 type PasswordFieldProps = {
   autoComplete: 'new-password' | 'current-password';
   placeholder: string;
   description?: string;
+  /** Enforced with a plain-language message instead of the browser's. */
   minLength?: number;
   maxLength?: number;
-  isDisabled?: boolean;
+  /** Keeps focus in the field while a submit is in flight (unlike disabled). */
+  isReadOnly?: boolean;
 };
 
 /** Required `password` field with a show/hide toggle. */
@@ -27,7 +30,7 @@ export function PasswordField({
   description,
   minLength,
   maxLength,
-  isDisabled,
+  isReadOnly,
 }: PasswordFieldProps) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -37,12 +40,16 @@ export function PasswordField({
       name="password"
       type={isVisible ? 'text' : 'password'}
       autoComplete={autoComplete}
-      minLength={minLength}
       maxLength={maxLength}
-      isDisabled={isDisabled}
+      isReadOnly={isReadOnly}
+      validate={(value) =>
+        minLength && value.length < minLength
+          ? `Password must be at least ${minLength} characters`
+          : null
+      }
     >
       <Label>Password</Label>
-      <InputGroup>
+      <InputGroup className={inputGroupClassName}>
         <InputGroup.Prefix>
           <Lock className="size-4 text-muted" />
         </InputGroup.Prefix>
@@ -50,7 +57,7 @@ export function PasswordField({
         <InputGroup.Suffix className="pr-1">
           <Button
             isIconOnly
-            size="sm"
+            size="md"
             variant="ghost"
             aria-label={isVisible ? 'Hide password' : 'Show password'}
             onPress={() => setIsVisible((visible) => !visible)}

@@ -18,19 +18,23 @@ export function AuthShell({
   footer,
 }: AuthShellProps) {
   return (
-    <main className="relative flex flex-1 items-center justify-center overflow-hidden px-4 py-12">
+    <main className="relative flex flex-1 items-center justify-center px-4 py-12">
+      {/* The blobs overflow on purpose. They live in their own clipped layer:
+          clipping <main> instead lets focus() scroll it and shift the card. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-40 -left-32 size-[28rem] rounded-full bg-accent/25 blur-3xl"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-32 -bottom-40 size-[30rem] rounded-full bg-success/20 blur-3xl"
-      />
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+      >
+        <div className="absolute -top-40 -left-32 size-[28rem] rounded-full bg-accent/25 blur-3xl" />
+        <div className="absolute -right-32 -bottom-40 size-[30rem] rounded-full bg-success/20 blur-3xl" />
+      </div>
 
       <div className="relative flex w-full max-w-md flex-col items-center gap-6">
         <div className="flex items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl bg-accent text-accent-foreground shadow-lg shadow-accent/30">
+          <span
+            aria-hidden="true"
+            className="flex size-11 items-center justify-center rounded-2xl bg-accent text-accent-foreground shadow-lg shadow-accent/30"
+          >
             <Video className="size-6" />
           </span>
           <span className="text-xl font-semibold tracking-tight">
@@ -40,7 +44,8 @@ export function AuthShell({
 
         <Card className="w-full gap-6 p-6 shadow-xl sm:p-8">
           <Card.Header className="gap-1">
-            <Card.Title className="text-2xl font-semibold">{title}</Card.Title>
+            {/* The page's only h1; Card.Title would render an h3. */}
+            <h1 className="text-2xl font-semibold">{title}</h1>
             <Card.Description>{description}</Card.Description>
           </Card.Header>
           <Card.Content>{children}</Card.Content>
