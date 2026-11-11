@@ -2,10 +2,10 @@
 
 Monorepo (npm workspaces).
 
-| Project | Stack   | Path       |
-| ------- | ------- | ---------- |
-| `web`   | Next.js | `apps/web` |
-| `api`   | NestJS  | `apps/api` |
+| Project | Stack           | Path       |
+| ------- | --------------- | ---------- |
+| `web`   | Next.js, HeroUI | `apps/web` |
+| `api`   | NestJS          | `apps/api` |
 
 ## Getting started
 
@@ -13,6 +13,15 @@ Monorepo (npm workspaces).
 npm install
 npm run dev        # web + api in parallel
 ```
+
+Web runs on http://localhost:3000 and the api on http://localhost:3001 (`PORT` in `.env`, see `.env.example`).
+
+## Web
+
+The web app calls the api only from the server (server actions), so the browser needs no CORS setup. The api base URL is `API_URL` (default `http://localhost:3001`); override it in `apps/web/.env.local`. After a successful sign-up or sign-in the access token is kept in an httpOnly `access_token` cookie.
+
+- `/register` — sign-up form (email and password) backed by `POST /auth/register`.
+- `/login` — sign-in form backed by `POST /auth/login`.
 
 ## Database
 

@@ -2,10 +2,10 @@
 
 Monorepo on npm workspaces (Node >= 22, version in `.nvmrc`).
 
-| Project               | Stack   | Path       |
-| --------------------- | ------- | ---------- |
-| `@video-meetings/web` | Next.js | `apps/web` |
-| `@video-meetings/api` | NestJS  | `apps/api` |
+| Project               | Stack           | Path       |
+| --------------------- | --------------- | ---------- |
+| `@video-meetings/web` | Next.js, HeroUI | `apps/web` |
+| `@video-meetings/api` | NestJS          | `apps/api` |
 
 Each app has its own `CLAUDE.md` with app-specific rules. Read it before working in that app.
 
@@ -24,6 +24,11 @@ Each app has its own `CLAUDE.md` with app-specific rules. Read it before working
 - Configuration comes from `.env` (not committed); `.env.example` lists the variables and the `DATABASE_URL` used by the api app. Never commit `.env`.
 - `JWT_SECRET` (signs access tokens) is also required in `.env`; the api app fails fast without it. Apply migrations with `npm run db:migrate -w @video-meetings/api` before running the api or its e2e tests.
 - The api app uses Drizzle ORM (schema in `apps/api/src/db/schema.ts`, migrations in `apps/api/drizzle/`); details are in `apps/api/CLAUDE.md`.
+
+## Web and api
+
+- Ports: web on 3000, api on 3001 (`PORT` in the root `.env`; the api defaults to 3000 otherwise and would clash with web).
+- `web` calls the api only on the server (server actions) via `API_URL` (default `http://localhost:3001`, override in `apps/web/.env.local`), so there is no CORS setup. The access token returned by the api is stored in an httpOnly `access_token` cookie. Details are in `apps/web/CLAUDE.md`.
 
 ## Rules
 
