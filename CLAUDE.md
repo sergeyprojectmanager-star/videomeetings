@@ -37,6 +37,7 @@ Each app has its own `CLAUDE.md` with app-specific rules. Read it before working
 - Install dependencies through npm workspaces (`npm install <pkg> -w @video-meetings/<app>`), not by `cd`-ing into an app.
 - Style: Prettier (`singleQuote`, `trailingComma: all`) configured in `.prettierrc`; indentation and line endings in `.editorconfig`.
 - Auto-formatting: a `PostToolUse` hook (`.claude/settings.json`, script `.claude/hooks/format.mjs`) runs Prettier on every file after Edit/Write; there is no need to format changed files manually.
+- A Husky `pre-commit` hook (`.husky/pre-commit`, installed by the root `prepare` script on `npm install`) runs `npm run lint` and `npm run test` for the whole repository before every commit and aborts the commit if either fails. Fix the cause and commit again; never bypass it with `--no-verify`. It does not run `typecheck`, `build` or the api e2e tests, so those stay your responsibility.
 - After changes, run `lint`, `typecheck` and `test` for the affected app. For api changes that touch the database, auth, guards or routes, also run `test:e2e`. The web app has no automated tests: its checks are `lint`, `typecheck`, `build` and the visual Playwright test required for UI changes (`apps/web/CLAUDE.md`).
 - Next.js and NestJS versions are newer than the training data: follow the documentation referenced in each app's `AGENTS.md` rather than memory.
 - Skills live in `.agents/skills/` (`.claude/skills/` holds links to them); the list is pinned in `skills-lock.json`. For HeroUI UI work use the `heroui-react` skill.

@@ -16,6 +16,14 @@ npm run dev        # web + api in parallel
 
 Web runs on http://localhost:3000 and the api on http://localhost:3001 (`PORT` in `.env`, see `.env.example`).
 
+## Git hooks
+
+[Husky](https://typicode.github.io/husky/) installs a `pre-commit` hook (`.husky/pre-commit`) that runs `npm run lint` and `npm run test` for the whole repository (about 7 seconds). If either fails, the commit is not created: fix the problem and commit again.
+
+- The hook is installed by `npm install` (the root `prepare` script runs `husky`), so run it once after cloning.
+- It runs the unit tests only. The api e2e tests need a running database, so run them yourself when needed (see Tests below).
+- Do not skip it with `git commit --no-verify`.
+
 ## Web
 
 The web app calls the api only from the server (server actions), so the browser needs no CORS setup. The api base URL is `API_URL` (default `http://localhost:3001`); override it in `apps/web/.env.local`. After a successful sign-up or sign-in the access token is kept in an httpOnly `access_token` cookie and the user is sent to the home page.
