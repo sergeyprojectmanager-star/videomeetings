@@ -28,7 +28,7 @@ Each app has its own `CLAUDE.md` with app-specific rules. Read it before working
 ## Web and api
 
 - Ports: web on 3000, api on 3001 (`PORT` in the root `.env`; the api defaults to 3000 otherwise and would clash with web).
-- `web` calls the api only on the server (server actions) via `API_URL` (default `http://localhost:3001`, override in `apps/web/.env.local`), so there is no CORS setup. The access token returned by the api is stored in an httpOnly `access_token` cookie. Details are in `apps/web/CLAUDE.md`.
+- `web` calls the api only on the server (server actions) via `API_URL` (default `http://localhost:3001`, override in `apps/web/.env.local`), so there is no CORS setup. The access token returned by the api is stored in an httpOnly `access_token` cookie; the signed-in home page (`/`) is protected by a proxy check and by asking the api (`GET /auth/me`, `GET /meetings`) on each render. Details are in `apps/web/CLAUDE.md`.
 
 ## Rules
 

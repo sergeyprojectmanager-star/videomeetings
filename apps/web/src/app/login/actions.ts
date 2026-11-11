@@ -1,11 +1,11 @@
 'use server';
 
+import { redirect } from 'next/navigation';
 import { API_URL } from '@/lib/api';
 import { setAccessTokenCookie } from '@/lib/session';
 
 export type LoginState =
   | { status: 'idle' }
-  | { status: 'success'; email: string }
   | {
       status: 'error';
       email: string;
@@ -13,6 +13,10 @@ export type LoginState =
       fieldErrors?: { email?: string };
     };
 
+/**
+ * Signs the user in through the api, keeps the access token in an httpOnly
+ * cookie and sends them to the home page. It only returns on failure.
+ */
 export async function login(
   _prevState: LoginState,
   formData: FormData,
@@ -62,6 +66,6 @@ export async function login(
 
   await setAccessTokenCookie(accessToken);
 
-  // The api compares e-mails lower-cased; show the address the way it is stored.
-  return { status: 'success', email: email.toLowerCase() };
+  // Outside the try block: redirect() works by throwing.
+  redirect('/');
 }

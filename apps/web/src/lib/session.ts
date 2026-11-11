@@ -12,3 +12,18 @@ export async function setAccessTokenCookie(accessToken: string) {
     maxAge: ACCESS_TOKEN_MAX_AGE_SECONDS,
   });
 }
+
+/** Removes the access token cookie, i.e. signs the user out (server actions only). */
+export async function clearAccessTokenCookie() {
+  const cookieStore = await cookies();
+  cookieStore.delete(ACCESS_TOKEN_COOKIE);
+}
+
+/**
+ * The access token of the current request, if any. Reads request data, so it
+ * can only be called behind a `<Suspense>` boundary (Cache Components).
+ */
+export async function getAccessToken(): Promise<string | undefined> {
+  const cookieStore = await cookies();
+  return cookieStore.get(ACCESS_TOKEN_COOKIE)?.value;
+}

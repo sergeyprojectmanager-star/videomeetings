@@ -1,20 +1,20 @@
-import { Button, Card } from '@heroui/react';
+import type { Metadata } from 'next';
+import { Suspense } from 'react';
+import { Dashboard } from './dashboard';
+import { DashboardSkeleton } from './dashboard-skeleton';
+
+export const metadata: Metadata = {
+  title: 'Your meetings · Video meetings',
+};
 
 export default function Home() {
   return (
-    <main className="flex flex-1 items-center justify-center p-6">
-      <Card className="w-full max-w-md">
-        <Card.Header>
-          <Card.Title>Video meetings</Card.Title>
-          <Card.Description>
-            HeroUI v3 is set up. Start building the UI from here.
-          </Card.Description>
-        </Card.Header>
-        <Card.Footer className="flex gap-3">
-          <Button>Get started</Button>
-          <Button variant="secondary">Learn more</Button>
-        </Card.Footer>
-      </Card>
-    </main>
+    <div className="flex flex-1 flex-col">
+      {/* The dashboard reads the session cookie, so it streams in behind a
+          boundary (Cache Components) instead of blocking the page. */}
+      <Suspense fallback={<DashboardSkeleton />}>
+        <Dashboard />
+      </Suspense>
+    </div>
   );
 }

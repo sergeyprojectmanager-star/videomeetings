@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { Video } from '@gravity-ui/icons';
 import { Card } from '@heroui/react';
+import { Brand } from './brand';
 
 type AuthShellProps = {
   title: string;
@@ -29,23 +29,11 @@ export function AuthShell({
         <div className="absolute -right-32 -bottom-40 size-[30rem] rounded-full bg-success/20 blur-3xl" />
       </div>
 
-      <div className="group/shell relative flex w-full max-w-md flex-col items-center gap-6">
-        <div className="flex items-center gap-3">
-          <span
-            aria-hidden="true"
-            className="flex size-11 items-center justify-center rounded-2xl bg-accent text-accent-foreground shadow-lg shadow-accent/30"
-          >
-            <Video className="size-6" />
-          </span>
-          <span className="text-xl font-semibold tracking-tight">
-            Video meetings
-          </span>
-        </div>
+      <div className="relative flex w-full max-w-md flex-col items-center gap-6">
+        <Brand />
 
         <Card className="w-full gap-6 p-6 shadow-xl sm:p-8">
-          {/* Once a form shows its success panel (`data-auth-success`), the
-              panel takes over: the invitation to sign up or in is hidden. */}
-          <Card.Header className="gap-1 group-has-[[data-auth-success]]/shell:hidden">
+          <Card.Header className="gap-1">
             {/* The page's only h1; Card.Title would render an h3. */}
             <h1 className="text-2xl font-semibold">{title}</h1>
             <Card.Description>{description}</Card.Description>
@@ -53,11 +41,7 @@ export function AuthShell({
           <Card.Content>{children}</Card.Content>
         </Card>
 
-        {footer ? (
-          <p className="text-sm text-muted group-has-[[data-auth-success]]/shell:hidden">
-            {footer}
-          </p>
-        ) : null}
+        {footer ? <p className="text-sm text-muted">{footer}</p> : null}
       </div>
     </main>
   );

@@ -1,7 +1,6 @@
 'use client';
 
 import { useActionState } from 'react';
-import { CircleCheck } from '@gravity-ui/icons';
 import { Button, Form, Spinner } from '@heroui/react';
 import { EmailField } from '@/components/email-field';
 import { FormErrorAlert } from '@/components/form-error-alert';
@@ -20,34 +19,8 @@ const validators = {
 
 export function LoginForm() {
   const [state, formAction, isPending] = useActionState(login, initialState);
-  const { formRef, alertRef, successRef } = useFormFocus(state);
+  const { formRef, alertRef } = useFormFocus(state);
   const { fieldProps, validateForm } = useFieldErrors(validators);
-
-  if (state.status === 'success') {
-    // `data-auth-success` makes AuthShell hide its own title, description and
-    // footer link, so this panel is the only heading (the h1) in this state.
-    return (
-      <div
-        ref={successRef}
-        role="status"
-        tabIndex={-1}
-        data-auth-success=""
-        className="flex flex-col items-center gap-3 py-4 text-center outline-none"
-      >
-        <span
-          aria-hidden="true"
-          className="flex size-14 items-center justify-center rounded-full bg-success/15 text-success"
-        >
-          <CircleCheck className="size-8" />
-        </span>
-        <h1 className="text-2xl font-semibold">You&apos;re signed in</h1>
-        <p className="text-sm text-muted">
-          Signed in as{' '}
-          <span className="font-medium text-foreground">{state.email}</span>.
-        </p>
-      </div>
-    );
-  }
 
   const fieldErrors = state.status === 'error' ? state.fieldErrors : undefined;
   const message = state.status === 'error' ? state.message : undefined;

@@ -18,10 +18,11 @@ Web runs on http://localhost:3000 and the api on http://localhost:3001 (`PORT` i
 
 ## Web
 
-The web app calls the api only from the server (server actions), so the browser needs no CORS setup. The api base URL is `API_URL` (default `http://localhost:3001`); override it in `apps/web/.env.local`. After a successful sign-up or sign-in the access token is kept in an httpOnly `access_token` cookie.
+The web app calls the api only from the server (server actions), so the browser needs no CORS setup. The api base URL is `API_URL` (default `http://localhost:3001`); override it in `apps/web/.env.local`. After a successful sign-up or sign-in the access token is kept in an httpOnly `access_token` cookie and the user is sent to the home page.
 
+- `/` — home page, signed-in users only (others are redirected to `/login`): the signed-in e-mail, a **Sign out** button, the three latest meetings and the list of all meetings (`GET /auth/me`, `GET /meetings`).
 - `/register` — sign-up form (email and password) backed by `POST /auth/register`.
-- `/login` — sign-in form backed by `POST /auth/login`.
+- `/login` — sign-in form backed by `POST /auth/login`, with a link to sign-up.
 
 ## Database
 
@@ -48,10 +49,11 @@ npm run db:migrate -w @video-meetings/api    # apply migrations
 
 ## Authentication
 
-The api app issues JWT access tokens (HS256, signed with `JWT_SECRET` from `.env`, valid for 1 hour). Both endpoints take `{ "email": "...", "password": "..." }` and return `{ "accessToken": "..." }`:
+The api app issues JWT access tokens (HS256, signed with `JWT_SECRET` from `.env`, valid for 1 hour). Register and login take `{ "email": "...", "password": "..." }` and return `{ "accessToken": "..." }`:
 
 - `POST /auth/register` — creates a user (201); 409 if the e-mail is taken, 400 for an invalid body (password: 8-128 characters).
 - `POST /auth/login` — looks the user up (200); 401 for a wrong password or unknown e-mail.
+- `GET /auth/me` — `{ id, email }` of the token's user (200); needs `Authorization: Bearer <accessToken>`, 401 for a bad token or a deleted user.
 
 Users are stored in the `users` table; passwords are hashed with scrypt. Run `db:migrate` before starting the api or its e2e tests.
 

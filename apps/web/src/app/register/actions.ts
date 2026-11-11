@@ -1,11 +1,11 @@
 'use server';
 
+import { redirect } from 'next/navigation';
 import { API_URL } from '@/lib/api';
 import { setAccessTokenCookie } from '@/lib/session';
 
 export type RegisterState =
   | { status: 'idle' }
-  | { status: 'success'; email: string }
   | {
       status: 'error';
       email: string;
@@ -79,6 +79,7 @@ export async function register(
 
   await setAccessTokenCookie(accessToken);
 
-  // The api stores e-mails lower-cased; show the address the way it is stored.
-  return { status: 'success', email: email.toLowerCase() };
+  // The user is signed in by registering: go straight to the home page.
+  // Outside the try block: redirect() works by throwing.
+  redirect('/');
 }
