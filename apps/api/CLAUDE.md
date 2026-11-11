@@ -22,9 +22,22 @@ Backend: NestJS 12, TypeScript, ESM (`"type": "module"`).
 - `npm run build` / `npm run start:prod` — build and run `dist/main`
 - `npm run lint` / `npm run lint:fix` — oxlint with type checking
 - `npm run typecheck` — `tsc --noEmit`
-- `npm run test` — unit tests (Vitest); `test:watch`, `test:cov`
-- `npm run test:e2e` — e2e tests
+- `npm run test` — unit tests (Vitest); `test:watch` re-runs on change, `test:cov` prints a V8 coverage summary (the report goes to the git-ignored `coverage/`)
+- `npm run test:e2e` — e2e tests against the real database; see "Running the tests" below
 - `npm run db:generate` — generate a migration from `src/db/schema.ts`; `db:migrate` — apply migrations; `db:studio` — Drizzle Studio
+
+## Running the tests
+
+| Kind                       | Command            | Needs                                                                                                                                                                                        |
+| -------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit (`src/**/*.spec.ts`)  | `npm run test`     | nothing: no database, no `.env` (services are mocked)                                                                                                                                        |
+| e2e (`test/*.e2e-spec.ts`) | `npm run test:e2e` | PostgreSQL running (`docker compose up -d` at the root), migrations applied (`npm run db:migrate`) and `DATABASE_URL` in the root `.env`; `JWT_SECRET` is supplied by `vitest.config.e2e.ts` |
+
+- One file: `npx vitest run src/users/email.spec.ts` (unit) or `npx vitest run --config ./vitest.config.e2e.ts test/meetings.e2e-spec.ts` (e2e). One test by name: `npx vitest run -t "part of the test name"`. Run these from `apps/api`.
+- The e2e tests boot the whole `AppModule` against the dev database, so they cover the wiring unit tests cannot (handler registration, validation, guards, status codes, the real SQL). They run one file at a time (`fileParallelism: false`).
+- They clean up after themselves by deleting every user whose e-mail matches `e2e-%@example.test` (a user's meetings go with it). Never use that e-mail pattern for data you want to keep. The auth tests also count all users, so do not register accounts (in the app or by hand) while they run.
+- Unit tests alone are not enough after a change to the database access, the auth flow, guards or routes: run `test:e2e` too.
+- Before finishing a change to the api, run `lint`, `typecheck`, `test` and, when it touches the areas above, `test:e2e`.
 
 ## Database
 

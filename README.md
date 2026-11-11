@@ -67,6 +67,18 @@ All meeting routes require `Authorization: Bearer <accessToken>` (401 otherwise)
 
 Meetings are stored in the `meetings` table (deleted together with their owner).
 
+## Tests
+
+| What                    | Command                                                                                                    | Needs                                                                                                                                   |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| api unit tests (Vitest) | `npm run test`                                                                                             | nothing: no database, no `.env`                                                                                                         |
+| api end-to-end tests    | `npm run test:e2e -w @video-meetings/api`                                                                  | PostgreSQL running (`docker compose up -d`), migrations applied (`npm run db:migrate -w @video-meetings/api`), `DATABASE_URL` in `.env` |
+| web                     | no automated tests yet; use `npm run lint`, `npm run typecheck` and `npm run build -w @video-meetings/web` |                                                                                                                                         |
+
+- One test file: `npx vitest run <file>` from `apps/api` (add `--config ./vitest.config.e2e.ts` for an e2e file); one test by name: `npx vitest run -t "<part of the name>"`; watch mode and coverage: `npm run test:watch` / `npm run test:cov -w @video-meetings/api`.
+- The e2e tests use the real database and delete every user with an e-mail like `e2e-%@example.test` afterwards, so do not use that pattern for data you want to keep, and do not register accounts while they run.
+- UI changes in `apps/web` are also checked visually in a browser with Playwright (see [apps/web/CLAUDE.md](apps/web/CLAUDE.md)).
+
 ## Architecture notes
 
 - The api app separates commands (state changes) from queries (reads) with `@nestjs/cqrs`: see [apps/api/docs/cqrs.md](apps/api/docs/cqrs.md).
@@ -78,5 +90,5 @@ Meetings are stored in the `meetings` table (deleted together with their owner).
 - `npm run build`
 - `npm run lint` / `lint:fix`
 - `npm run typecheck`
-- `npm run test`
+- `npm run test` (unit tests; e2e: `npm run test:e2e -w @video-meetings/api`)
 - `npm run format` / `format:check`

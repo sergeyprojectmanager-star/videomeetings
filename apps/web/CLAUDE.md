@@ -26,6 +26,7 @@ Frontend: Next.js 16 (App Router), React 19, Tailwind CSS v4, HeroUI v3 (`@herou
 - `npm run build` / `npm run start` — production build and start
 - `npm run lint` / `npm run lint:fix` — ESLint
 - `npm run typecheck` — `next typegen && tsc --noEmit`
+- There is no `test` script: the web app has no automated tests yet. Its checks are `lint`, `typecheck`, `build` (also validates the Cache Components rules) and the visual Playwright test described below.
 
 ## Definition of done for UI changes
 

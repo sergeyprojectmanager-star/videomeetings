@@ -13,7 +13,8 @@ Each app has its own `CLAUDE.md` with app-specific rules. Read it before working
 
 - `npm install` — install dependencies for all workspaces
 - `npm run dev` — web and api in parallel (`dev:web`, `dev:api` — individually)
-- `npm run build` / `lint` / `lint:fix` / `typecheck` / `test` — run in all workspaces
+- `npm run build` / `lint` / `lint:fix` / `typecheck` / `test` — run in all workspaces (`test` is the unit tests; only the api has any)
+- `npm run test:e2e -w @video-meetings/api` — api end-to-end tests; they need the database running and migrated (see "Database" below and `apps/api/CLAUDE.md`)
 - `npm run format` / `format:check` — Prettier for the whole repository
 - Single app: `npm run <script> -w @video-meetings/web` (or `api`)
 
@@ -36,7 +37,7 @@ Each app has its own `CLAUDE.md` with app-specific rules. Read it before working
 - Install dependencies through npm workspaces (`npm install <pkg> -w @video-meetings/<app>`), not by `cd`-ing into an app.
 - Style: Prettier (`singleQuote`, `trailingComma: all`) configured in `.prettierrc`; indentation and line endings in `.editorconfig`.
 - Auto-formatting: a `PostToolUse` hook (`.claude/settings.json`, script `.claude/hooks/format.mjs`) runs Prettier on every file after Edit/Write; there is no need to format changed files manually.
-- After changes, run `lint`, `typecheck` and `test` for the affected app.
+- After changes, run `lint`, `typecheck` and `test` for the affected app. For api changes that touch the database, auth, guards or routes, also run `test:e2e`. The web app has no automated tests: its checks are `lint`, `typecheck`, `build` and the visual Playwright test required for UI changes (`apps/web/CLAUDE.md`).
 - Next.js and NestJS versions are newer than the training data: follow the documentation referenced in each app's `AGENTS.md` rather than memory.
 - Skills live in `.agents/skills/` (`.claude/skills/` holds links to them); the list is pinned in `skills-lock.json`. For HeroUI UI work use the `heroui-react` skill.
 
