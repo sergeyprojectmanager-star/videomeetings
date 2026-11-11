@@ -9,3 +9,7 @@ coverage
 !.env.example
 .DS_Store
 npm-debug.log*
+
+# Screenshots and browser-test artifacts (e.g. from Playwright UI checks)
+screenshot/
+.playwright-cli/

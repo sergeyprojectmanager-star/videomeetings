@@ -87,7 +87,7 @@ Meetings are stored in the `meetings` table (deleted together with their owner).
 
 - One test file: `npx vitest run <file>` from `apps/api` (add `--config ./vitest.config.e2e.ts` for an e2e file); one test by name: `npx vitest run -t "<part of the name>"`; watch mode and coverage: `npm run test:watch` / `npm run test:cov -w @video-meetings/api`.
 - The e2e tests use the real database and delete every user with an e-mail like `e2e-%@example.test` afterwards, so do not use that pattern for data you want to keep, and do not register accounts while they run.
-- UI changes in `apps/web` are also checked visually in a browser with Playwright (see [apps/web/CLAUDE.md](apps/web/CLAUDE.md)).
+- UI changes in `apps/web` are also checked visually in a browser with Playwright (see [apps/web/CLAUDE.md](apps/web/CLAUDE.md)). The screenshots go to the git-ignored `screenshot/` folder (and `playwright-cli` keeps its artifacts in the git-ignored `.playwright-cli/`).
 
 ## Architecture notes
 
