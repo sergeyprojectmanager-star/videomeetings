@@ -70,6 +70,7 @@ Meetings are stored in the `meetings` table (deleted together with their owner).
 ## Architecture notes
 
 - The api app separates commands (state changes) from queries (reads) with `@nestjs/cqrs`: see [apps/api/docs/cqrs.md](apps/api/docs/cqrs.md).
+- The api's `auth` module (passwords, tokens) and `users` module (the `users` table) are separate and talk only through CQRS messages; the lint enforces that `auth` never imports the users module's internals.
 
 ## Scripts (from the root)
 

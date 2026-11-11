@@ -1,7 +1,7 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { PasswordHasher } from '@nestjs/authentication';
-import { QueryHandler, type IQueryHandler } from '@nestjs/cqrs';
-import { UsersService } from '../../users/users.service.js';
+import { QueryBus, QueryHandler, type IQueryHandler } from '@nestjs/cqrs';
+import { FindUserByEmailQuery } from '../../users/index.js';
 import {
   AccessTokenService,
   type AuthResult,
@@ -11,13 +11,14 @@ import { LoginQuery } from './login.query.js';
 @QueryHandler(LoginQuery)
 export class LoginHandler implements IQueryHandler<LoginQuery> {
   constructor(
-    private readonly users: UsersService,
+    // The users module is reached through the bus, never through its service.
+    private readonly queryBus: QueryBus,
     private readonly passwordHasher: PasswordHasher,
     private readonly tokens: AccessTokenService,
   ) {}
 
   async execute({ email, password }: LoginQuery): Promise<AuthResult> {
-    const user = await this.users.findByEmail(email);
+    const user = await this.queryBus.execute(new FindUserByEmailQuery(email));
     // With no user, verify() checks a dummy hash: an unknown e-mail and a wrong
     // password take the same time and give the same answer.
     const valid = await this.passwordHasher.verify(

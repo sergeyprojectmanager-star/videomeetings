@@ -2,7 +2,18 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "rules": {
     "typescript/no-explicit-any": "off",
-    "typescript/no-floating-promises": "error"
+    "typescript/no-floating-promises": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["**/users/**", "!**/users/index.js"],
+            "message": "Import the users module only through its public API (src/users/index.ts) and talk to it by dispatching its commands and queries on the CQRS buses."
+          }
+        ]
+      }
+    ]
   },
   "env": {
     "node": true

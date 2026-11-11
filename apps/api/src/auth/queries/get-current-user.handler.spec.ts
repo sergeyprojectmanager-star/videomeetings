@@ -1,56 +1,41 @@
 import { UnauthorizedException } from '@nestjs/common';
-import type { User, UsersService } from '../../users/users.service.js';
+import type { QueryBus } from '@nestjs/cqrs';
+import { FindUserByIdQuery } from '../../users/index.js';
 import { GetCurrentUserHandler } from './get-current-user.handler.js';
 import { GetCurrentUserQuery } from './get-current-user.query.js';
 
-const user: User = {
-  id: 'user-id',
-  email: 'jane@example.test',
-  passwordHash: 'stored-hash',
-  createdAt: new Date('2026-01-01T00:00:00Z'),
-};
+const profile = { id: 'user-id', email: 'jane@example.test' };
 
 describe('GetCurrentUserHandler', () => {
-  const users = {
-    findById: vi.fn<UsersService['findById']>(),
-    // A query must only read: a create() call would be a bug.
-    create: vi.fn<UsersService['create']>(),
-  };
-  const handler = new GetCurrentUserHandler(users as unknown as UsersService);
-  const query = new GetCurrentUserQuery(user.id);
+  const queryBus = { execute: vi.fn<QueryBus['execute']>() };
+  const handler = new GetCurrentUserHandler(queryBus as unknown as QueryBus);
+  const query = new GetCurrentUserQuery(profile.id);
 
   beforeEach(() => {
     vi.resetAllMocks();
-    users.findById.mockResolvedValue(user);
+    queryBus.execute.mockResolvedValue(profile);
   });
 
-  it('returns the id and e-mail of the user', async () => {
-    await expect(handler.execute(query)).resolves.toEqual({
-      id: user.id,
-      email: user.email,
-    });
+  it('asks the users module for the user by id and returns the profile', async () => {
+    await expect(handler.execute(query)).resolves.toEqual(profile);
 
-    expect(users.findById).toHaveBeenCalledWith(user.id);
-  });
-
-  it('never exposes the password hash', async () => {
-    const profile = await handler.execute(query);
-
-    expect(Object.keys(profile).sort()).toEqual(['email', 'id']);
-    expect(JSON.stringify(profile)).not.toContain(user.passwordHash);
+    expect(queryBus.execute).toHaveBeenCalledTimes(1);
+    const [message] = queryBus.execute.mock.calls[0];
+    expect(message).toBeInstanceOf(FindUserByIdQuery);
+    expect(message).toMatchObject({ id: profile.id });
   });
 
   it('throws an UnauthorizedException when the user no longer exists', async () => {
-    users.findById.mockResolvedValue(undefined);
+    queryBus.execute.mockResolvedValue(undefined);
 
     await expect(handler.execute(query)).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
   });
 
-  it('writes nothing', async () => {
-    await handler.execute(query);
+  it('lets errors from the users module through', async () => {
+    queryBus.execute.mockRejectedValue(new Error('db is down'));
 
-    expect(users.create).not.toHaveBeenCalled();
+    await expect(handler.execute(query)).rejects.toThrow('db is down');
   });
 });

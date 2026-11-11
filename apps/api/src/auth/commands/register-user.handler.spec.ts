@@ -1,24 +1,20 @@
 import { ConflictException } from '@nestjs/common';
 import type { PasswordHasher } from '@nestjs/authentication';
-import type { User, UsersService } from '../../users/users.service.js';
+import type { CommandBus } from '@nestjs/cqrs';
+import { CreateUserCommand } from '../../users/index.js';
 import type { AccessTokenService } from '../access-token.service.js';
 import { RegisterUserCommand } from './register-user.command.js';
 import { RegisterUserHandler } from './register-user.handler.js';
 
-const user: User = {
-  id: 'user-id',
-  email: 'jane@example.test',
-  passwordHash: 'stored-hash',
-  createdAt: new Date('2026-01-01T00:00:00Z'),
-};
+const user = { id: 'user-id', email: 'jane@example.test' };
 
 describe('RegisterUserHandler', () => {
-  const users = { create: vi.fn<UsersService['create']>() };
+  const commandBus = { execute: vi.fn<CommandBus['execute']>() };
   const passwordHasher = { hash: vi.fn<PasswordHasher['hash']>() };
   const tokens = { issueFor: vi.fn<AccessTokenService['issueFor']>() };
 
   const handler = new RegisterUserHandler(
-    users as unknown as UsersService,
+    commandBus as unknown as CommandBus,
     passwordHasher as unknown as PasswordHasher,
     tokens as unknown as AccessTokenService,
   );
@@ -27,15 +23,22 @@ describe('RegisterUserHandler', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     passwordHasher.hash.mockResolvedValue('hashed password');
-    users.create.mockResolvedValue(user);
+    commandBus.execute.mockResolvedValue(user);
     tokens.issueFor.mockResolvedValue({ accessToken: 'jwt' });
   });
 
-  it('stores the hash of the password, not the password', async () => {
+  it('asks the users module to create the user, with the hash and not the password', async () => {
     await handler.execute(command);
 
     expect(passwordHasher.hash).toHaveBeenCalledWith('plain password');
-    expect(users.create).toHaveBeenCalledWith(user.email, 'hashed password');
+    expect(commandBus.execute).toHaveBeenCalledTimes(1);
+    const [message] = commandBus.execute.mock.calls[0];
+    expect(message).toBeInstanceOf(CreateUserCommand);
+    expect(message).toMatchObject({
+      email: user.email,
+      passwordHash: 'hashed password',
+    });
+    expect(JSON.stringify(message)).not.toContain('plain password');
   });
 
   it('returns a token for the created user', async () => {
@@ -46,8 +49,8 @@ describe('RegisterUserHandler', () => {
     expect(tokens.issueFor).toHaveBeenCalledWith(user.id);
   });
 
-  it('throws a ConflictException and issues no token when the e-mail is taken', async () => {
-    users.create.mockResolvedValue(null);
+  it('passes the 409 of the users module through and issues no token', async () => {
+    commandBus.execute.mockRejectedValue(new ConflictException('taken'));
 
     await expect(handler.execute(command)).rejects.toBeInstanceOf(
       ConflictException,
@@ -61,12 +64,12 @@ describe('RegisterUserHandler', () => {
 
     await expect(handler.execute(command)).rejects.toThrow(RangeError);
 
-    expect(users.create).not.toHaveBeenCalled();
+    expect(commandBus.execute).not.toHaveBeenCalled();
     expect(tokens.issueFor).not.toHaveBeenCalled();
   });
 
-  it('lets repository errors through and issues no token', async () => {
-    users.create.mockRejectedValue(new Error('db is down'));
+  it('lets other errors from the users module through and issues no token', async () => {
+    commandBus.execute.mockRejectedValue(new Error('db is down'));
 
     await expect(handler.execute(command)).rejects.toThrow('db is down');
 

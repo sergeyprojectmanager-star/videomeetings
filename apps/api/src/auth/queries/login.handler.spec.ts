@@ -1,28 +1,27 @@
 import { UnauthorizedException } from '@nestjs/common';
 import type { PasswordHasher } from '@nestjs/authentication';
-import type { User, UsersService } from '../../users/users.service.js';
+import type { QueryBus } from '@nestjs/cqrs';
+import {
+  FindUserByEmailQuery,
+  type UserCredentials,
+} from '../../users/index.js';
 import type { AccessTokenService } from '../access-token.service.js';
 import { LoginHandler } from './login.handler.js';
 import { LoginQuery } from './login.query.js';
 
-const user: User = {
+const user: UserCredentials = {
   id: 'user-id',
   email: 'jane@example.test',
   passwordHash: 'stored-hash',
-  createdAt: new Date('2026-01-01T00:00:00Z'),
 };
 
 describe('LoginHandler', () => {
-  const users = {
-    findByEmail: vi.fn<UsersService['findByEmail']>(),
-    // Login must only read: a create() call would be a bug.
-    create: vi.fn<UsersService['create']>(),
-  };
+  const queryBus = { execute: vi.fn<QueryBus['execute']>() };
   const passwordHasher = { verify: vi.fn<PasswordHasher['verify']>() };
   const tokens = { issueFor: vi.fn<AccessTokenService['issueFor']>() };
 
   const handler = new LoginHandler(
-    users as unknown as UsersService,
+    queryBus as unknown as QueryBus,
     passwordHasher as unknown as PasswordHasher,
     tokens as unknown as AccessTokenService,
   );
@@ -30,7 +29,7 @@ describe('LoginHandler', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    users.findByEmail.mockResolvedValue(user);
+    queryBus.execute.mockResolvedValue(user);
     passwordHasher.verify.mockResolvedValue(true);
     tokens.issueFor.mockResolvedValue({ accessToken: 'jwt' });
   });
@@ -40,12 +39,20 @@ describe('LoginHandler', () => {
       accessToken: 'jwt',
     });
 
-    expect(users.findByEmail).toHaveBeenCalledWith(user.email);
     expect(passwordHasher.verify).toHaveBeenCalledWith(
       'plain password',
       user.passwordHash,
     );
     expect(tokens.issueFor).toHaveBeenCalledWith(user.id);
+  });
+
+  it('asks the users module for the user by e-mail', async () => {
+    await handler.execute(query);
+
+    expect(queryBus.execute).toHaveBeenCalledTimes(1);
+    const [message] = queryBus.execute.mock.calls[0];
+    expect(message).toBeInstanceOf(FindUserByEmailQuery);
+    expect(message).toMatchObject({ email: user.email });
   });
 
   it('throws an UnauthorizedException and issues no token when the password is wrong', async () => {
@@ -59,7 +66,7 @@ describe('LoginHandler', () => {
   });
 
   it('throws an UnauthorizedException and issues no token for an unknown e-mail', async () => {
-    users.findByEmail.mockResolvedValue(undefined);
+    queryBus.execute.mockResolvedValue(undefined);
     passwordHasher.verify.mockResolvedValue(false);
 
     await expect(handler.execute(query)).rejects.toBeInstanceOf(
@@ -70,7 +77,7 @@ describe('LoginHandler', () => {
   });
 
   it('still verifies the password for an unknown e-mail, so the timing does not reveal it', async () => {
-    users.findByEmail.mockResolvedValue(undefined);
+    queryBus.execute.mockResolvedValue(undefined);
     passwordHasher.verify.mockResolvedValue(false);
 
     await expect(handler.execute(query)).rejects.toThrow();
@@ -86,7 +93,7 @@ describe('LoginHandler', () => {
     passwordHasher.verify.mockResolvedValue(false);
     const wrongPassword = await handler.execute(query).catch((e: unknown) => e);
 
-    users.findByEmail.mockResolvedValue(undefined);
+    queryBus.execute.mockResolvedValue(undefined);
     const unknownEmail = await handler.execute(query).catch((e: unknown) => e);
 
     expect(unknownEmail).toBeInstanceOf(UnauthorizedException);
@@ -95,12 +102,14 @@ describe('LoginHandler', () => {
     );
   });
 
-  it('does not create a user', async () => {
+  it('only looks users up: it dispatches nothing but the lookup query', async () => {
     await handler.execute(query);
-    users.findByEmail.mockResolvedValue(undefined);
+    queryBus.execute.mockResolvedValue(undefined);
     passwordHasher.verify.mockResolvedValue(false);
     await handler.execute(query).catch(() => undefined);
 
-    expect(users.create).not.toHaveBeenCalled();
+    for (const [message] of queryBus.execute.mock.calls) {
+      expect(message).toBeInstanceOf(FindUserByEmailQuery);
+    }
   });
 });

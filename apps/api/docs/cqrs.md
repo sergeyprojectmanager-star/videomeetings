@@ -1,6 +1,6 @@
 # CQRS in the api app
 
-The api app separates **commands** (use cases that change state) from **queries** (use cases that only read), using [`@nestjs/cqrs`](https://docs.nestjs.com/recipes/cqrs.md). It is applied to the `auth` and `meetings` modules; new feature modules follow the same shape.
+The api app separates **commands** (use cases that change state) from **queries** (use cases that only read), using [`@nestjs/cqrs`](https://docs.nestjs.com/recipes/cqrs.md). It is applied to the `auth`, `users` and `meetings` modules; new feature modules follow the same shape.
 
 There are no events, sagas or separate read models yet: one database, one schema, one set of services. CQRS here means a clear, uniform split of the application layer, not a distributed architecture.
 
@@ -16,13 +16,13 @@ HTTP request
   → result returned through the bus, serialized by Nest as the HTTP response
 ```
 
-| Layer      | Responsibility                                                                                                       | Must not                                          |
-| ---------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| Controller | HTTP only: routes, `@Body({ schema })` validation, `@CurrentUser()`, building the command/query and dispatching it   | contain logic or touch the database               |
-| Command    | Immutable message: the data one state-changing use case needs, plus its result type                                  | contain behavior                                  |
-| Query      | Immutable message: the data one read-only use case needs, plus its result type                                       | change state                                      |
-| Handler    | Executes exactly one command or query; throws Nest `HttpException`s (`NotFoundException`, `ConflictException`, etc.) | know about HTTP requests, or call another handler |
-| Service    | Persistence and infrastructure (`UsersService`, `MeetingsService`, `AccessTokenService`)                             | decide which use case runs or format HTTP errors  |
+| Layer      | Responsibility                                                                                                       | Must not                                                      |
+| ---------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Controller | HTTP only: routes, `@Body({ schema })` validation, `@CurrentUser()`, building the command/query and dispatching it   | contain logic or touch the database                           |
+| Command    | Immutable message: the data one state-changing use case needs, plus its result type                                  | contain behavior                                              |
+| Query      | Immutable message: the data one read-only use case needs, plus its result type                                       | change state                                                  |
+| Handler    | Executes exactly one command or query; throws Nest `HttpException`s (`NotFoundException`, `ConflictException`, etc.) | know about HTTP requests, or call a handler of its own module |
+| Service    | Persistence and infrastructure (`UsersService`, `MeetingsService`, `AccessTokenService`)                             | decide which use case runs or format HTTP errors              |
 
 ## Commands vs queries
 
@@ -131,16 +131,37 @@ export class MeetingsModule {}
 
 A handler that is not listed in `providers` is silently never called: the bus then fails with "no handler" at runtime.
 
+## Talking to another module
+
+Modules do not call each other's services. A module that needs something from another one dispatches that module's public command or query on the bus, exactly as a controller does. `auth` and `users` are the example:
+
+```
+POST /auth/register
+  → AuthController → RegisterUserCommand → RegisterUserHandler   (auth)
+       hashes the password
+       → CreateUserCommand(email, passwordHash) → CreateUserHandler   (users)
+            normalizes the e-mail, inserts the row, 409 if it is taken
+       issues the token for the returned { id, email }
+```
+
+- The public API of a module is its `index.ts`: the commands and queries other modules may dispatch, their result types and the module class. Everything else (services, handlers, schema helpers) is internal, and the module's `exports` stay empty, so the compiler and the lint rule (`no-restricted-imports` in `.oxlintrc.json`) both keep other modules out.
+- Pass plain data across the boundary and return narrow results (`UserProfile`, not the table row). Anything sensitive, like the password hash, crosses only in the one message that needs it (`FindUserByEmailQuery`).
+- Each module keeps the rules it owns: `users` normalizes e-mails and decides that a taken e-mail is a conflict; `auth` decides what bad credentials mean. Errors from the other module pass through the bus unchanged.
+- The calling module imports only the message classes, not the other module (`AuthModule` does not import `UsersModule`; `AppModule` imports both and `CqrsModule.forRoot()` connects the handlers).
+
 ## Use cases today
 
-| Module     | Message                | Type    | Result            | Errors                        |
-| ---------- | ---------------------- | ------- | ----------------- | ----------------------------- |
-| `auth`     | `RegisterUserCommand`  | command | `{ accessToken }` | 409 e-mail taken              |
-| `auth`     | `LoginQuery`           | query   | `{ accessToken }` | 401 bad credentials           |
-| `auth`     | `GetCurrentUserQuery`  | query   | `{ id, email }`   | 401 user no longer exists     |
-| `meetings` | `CreateMeetingCommand` | command | `Meeting`         |                               |
-| `meetings` | `ListMeetingsQuery`    | query   | `Meeting[]`       |                               |
-| `meetings` | `GetMeetingQuery`      | query   | `Meeting`         | 404 not found / not the owner |
+| Module     | Message                | Type    | Result                                       | Errors                        |
+| ---------- | ---------------------- | ------- | -------------------------------------------- | ----------------------------- |
+| `auth`     | `RegisterUserCommand`  | command | `{ accessToken }`                            | 409 e-mail taken (from users) |
+| `auth`     | `LoginQuery`           | query   | `{ accessToken }`                            | 401 bad credentials           |
+| `auth`     | `GetCurrentUserQuery`  | query   | `{ id, email }`                              | 401 user no longer exists     |
+| `users`    | `CreateUserCommand`    | command | `{ id, email }`                              | 409 e-mail taken              |
+| `users`    | `FindUserByEmailQuery` | query   | `{ id, email, passwordHash }` or `undefined` |                               |
+| `users`    | `FindUserByIdQuery`    | query   | `{ id, email }` or `undefined`               |                               |
+| `meetings` | `CreateMeetingCommand` | command | `Meeting`                                    |                               |
+| `meetings` | `ListMeetingsQuery`    | query   | `Meeting[]`                                  |                               |
+| `meetings` | `GetMeetingQuery`      | query   | `Meeting`                                    | 404 not found / not the owner |
 
 ## Adding a use case
 
@@ -153,7 +174,7 @@ A handler that is not listed in `providers` is silently never called: the bus th
 
 ## Rules of thumb
 
-- One handler per message; a handler does not dispatch other commands or queries. If two use cases share logic, move it into a service.
+- One handler per message. Inside a module a handler does not dispatch other commands or queries: if two use cases share logic, move it into a service. The one exception is talking to **another module** (see below).
 - Handlers and controllers stay thin; logic that is not orchestration belongs in a service.
 - Messages are plain data: no services, no `Request` objects, no behavior.
 - Pass identity explicitly (`ownerId`) and scope data access by it in the service (`findOwned(id, ownerId)`), so a handler cannot forget the ownership check.

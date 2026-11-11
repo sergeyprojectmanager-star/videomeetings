@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PasswordHasher } from '@nestjs/authentication';
 import { JwtModule } from '@nestjs/jwt';
-import { UsersModule } from '../users/users.module.js';
 import { AccessTokenService } from './access-token.service.js';
 import { AuthController } from './auth.controller.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
@@ -12,7 +11,6 @@ import { LoginHandler } from './queries/login.handler.js';
 
 @Module({
   imports: [
-    UsersModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -25,6 +23,8 @@ import { LoginHandler } from './queries/login.handler.js';
     }),
   ],
   controllers: [AuthController],
+  // No dependency on UsersModule: users are created and found by dispatching
+  // the commands and queries of `../users/index.ts` on the CQRS buses.
   // JwtModule and JwtAuthGuard are exported so other modules can protect routes
   // with `@UseGuards(JwtAuthGuard)`.
   exports: [JwtModule, JwtAuthGuard],

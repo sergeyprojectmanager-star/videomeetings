@@ -4,10 +4,9 @@ import { APP_PIPE } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DrizzleModule } from '@nestjs/drizzle';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import { MeetingsModule } from './meetings/meetings.module.js';
+import { UsersModule } from './users/index.js';
 
 @Module({
   imports: [
@@ -23,12 +22,11 @@ import { MeetingsModule } from './meetings/meetings.module.js';
       }),
     }),
     CqrsModule.forRoot(),
+    UsersModule,
     AuthModule,
     MeetingsModule,
   ],
-  controllers: [AppController],
   providers: [
-    AppService,
     // Validates parameters that declare a `schema`, e.g. `@Body({ schema })`.
     { provide: APP_PIPE, useClass: StandardSchemaValidationPipe },
   ],

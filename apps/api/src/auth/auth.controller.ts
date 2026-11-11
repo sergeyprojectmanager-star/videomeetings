@@ -10,10 +10,7 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { AuthResult } from './access-token.service.js';
 import { CurrentUser } from './current-user.decorator.js';
 import { type AuthenticatedUser, JwtAuthGuard } from './jwt-auth.guard.js';
-import {
-  GetCurrentUserQuery,
-  type UserProfile,
-} from './queries/get-current-user.query.js';
+import { GetCurrentUserQuery } from './queries/get-current-user.query.js';
 import {
   loginSchema,
   registerSchema,
@@ -22,6 +19,7 @@ import {
 } from './auth.schemas.js';
 import { RegisterUserCommand } from './commands/register-user.command.js';
 import { LoginQuery } from './queries/login.query.js';
+import type { UserProfile } from '../users/index.js';
 
 @Controller('auth')
 export class AuthController {

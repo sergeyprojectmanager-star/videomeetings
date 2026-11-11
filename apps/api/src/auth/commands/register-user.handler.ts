@@ -1,7 +1,6 @@
-import { ConflictException } from '@nestjs/common';
 import { PasswordHasher } from '@nestjs/authentication';
-import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { UsersService } from '../../users/users.service.js';
+import { CommandBus, CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { CreateUserCommand } from '../../users/index.js';
 import {
   AccessTokenService,
   type AuthResult,
@@ -11,17 +10,18 @@ import { RegisterUserCommand } from './register-user.command.js';
 @CommandHandler(RegisterUserCommand)
 export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand> {
   constructor(
-    private readonly users: UsersService,
+    // The users module is reached through the bus, never through its service.
+    private readonly commandBus: CommandBus,
     private readonly passwordHasher: PasswordHasher,
     private readonly tokens: AccessTokenService,
   ) {}
 
   async execute({ email, password }: RegisterUserCommand): Promise<AuthResult> {
     const passwordHash = await this.passwordHasher.hash(password);
-    const user = await this.users.create(email, passwordHash);
-    if (!user) {
-      throw new ConflictException('Email already registered');
-    }
+    // A taken e-mail makes the users module answer with a 409.
+    const user = await this.commandBus.execute(
+      new CreateUserCommand(email, passwordHash),
+    );
     return this.tokens.issueFor(user.id);
   }
 }
