@@ -11,6 +11,10 @@
      for button labels and links. This one (Tailwind blue-600) is about 5.2:1. */
   --accent: oklch(0.546 0.215 262.9);
 
+  /* Same for error text: HeroUI's default danger red is 3.6:1 against white.
+     This one (close to Tailwind red-600) is about 4.8:1. */
+  --danger: oklch(0.55 0.22 27);
+
   /* Form fields have no border by default; give them one that is at least 3:1
      against the card so the field boundary is visible (WCAG 1.4.11). */
   --field-border-width: 1px;

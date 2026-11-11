@@ -79,5 +79,6 @@ export async function register(
 
   await setAccessTokenCookie(accessToken);
 
-  return { status: 'success', email };
+  // The api stores e-mails lower-cased; show the address the way it is stored.
+  return { status: 'success', email: email.toLowerCase() };
 }

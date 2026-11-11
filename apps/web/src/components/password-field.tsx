@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type FocusEvent } from 'react';
 import { Eye, EyeSlash, Lock } from '@gravity-ui/icons';
 import {
   Button,
@@ -16,20 +16,24 @@ type PasswordFieldProps = {
   autoComplete: 'new-password' | 'current-password';
   placeholder: string;
   description?: string;
-  /** Enforced with a plain-language message instead of the browser's. */
-  minLength?: number;
   maxLength?: number;
+  /** Client-side error from `useFieldErrors`; server errors arrive via Form. */
+  error?: string;
+  onBlur?: (event: FocusEvent<HTMLInputElement>) => void;
+  onChange?: (value: string) => void;
   /** Keeps focus in the field while a submit is in flight (unlike disabled). */
   isReadOnly?: boolean;
 };
 
-/** Required `password` field with a show/hide toggle. */
+/** Required `password` field with a show/hide toggle; validation is driven by the parent form. */
 export function PasswordField({
   autoComplete,
   placeholder,
   description,
-  minLength,
   maxLength,
+  error,
+  onBlur,
+  onChange,
   isReadOnly,
 }: PasswordFieldProps) {
   const [isVisible, setIsVisible] = useState(false);
@@ -42,11 +46,9 @@ export function PasswordField({
       autoComplete={autoComplete}
       maxLength={maxLength}
       isReadOnly={isReadOnly}
-      validate={(value) =>
-        minLength && value.length < minLength
-          ? `Password must be at least ${minLength} characters`
-          : null
-      }
+      isInvalid={error ? true : undefined}
+      onBlur={onBlur}
+      onChange={onChange}
     >
       <Label>Password</Label>
       <InputGroup className={inputGroupClassName}>
@@ -67,7 +69,7 @@ export function PasswordField({
         </InputGroup.Suffix>
       </InputGroup>
       {description ? <Description>{description}</Description> : null}
-      <FieldError />
+      <FieldError className="text-sm">{error}</FieldError>
     </TextField>
   );
 }

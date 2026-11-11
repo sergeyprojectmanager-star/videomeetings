@@ -62,5 +62,6 @@ export async function login(
 
   await setAccessTokenCookie(accessToken);
 
-  return { status: 'success', email };
+  // The api compares e-mails lower-cased; show the address the way it is stored.
+  return { status: 'success', email: email.toLowerCase() };
 }

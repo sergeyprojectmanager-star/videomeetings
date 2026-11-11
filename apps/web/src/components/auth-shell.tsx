@@ -29,7 +29,7 @@ export function AuthShell({
         <div className="absolute -right-32 -bottom-40 size-[30rem] rounded-full bg-success/20 blur-3xl" />
       </div>
 
-      <div className="relative flex w-full max-w-md flex-col items-center gap-6">
+      <div className="group/shell relative flex w-full max-w-md flex-col items-center gap-6">
         <div className="flex items-center gap-3">
           <span
             aria-hidden="true"
@@ -43,7 +43,9 @@ export function AuthShell({
         </div>
 
         <Card className="w-full gap-6 p-6 shadow-xl sm:p-8">
-          <Card.Header className="gap-1">
+          {/* Once a form shows its success panel (`data-auth-success`), the
+              panel takes over: the invitation to sign up or in is hidden. */}
+          <Card.Header className="gap-1 group-has-[[data-auth-success]]/shell:hidden">
             {/* The page's only h1; Card.Title would render an h3. */}
             <h1 className="text-2xl font-semibold">{title}</h1>
             <Card.Description>{description}</Card.Description>
@@ -51,7 +53,11 @@ export function AuthShell({
           <Card.Content>{children}</Card.Content>
         </Card>
 
-        {footer ? <p className="text-sm text-muted">{footer}</p> : null}
+        {footer ? (
+          <p className="text-sm text-muted group-has-[[data-auth-success]]/shell:hidden">
+            {footer}
+          </p>
+        ) : null}
       </div>
     </main>
   );
