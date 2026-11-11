@@ -137,6 +137,7 @@ A handler that is not listed in `providers` is silently never called: the bus th
 | ---------- | ---------------------- | ------- | ----------------- | ----------------------------- |
 | `auth`     | `RegisterUserCommand`  | command | `{ accessToken }` | 409 e-mail taken              |
 | `auth`     | `LoginQuery`           | query   | `{ accessToken }` | 401 bad credentials           |
+| `auth`     | `GetCurrentUserQuery`  | query   | `{ id, email }`   | 401 user no longer exists     |
 | `meetings` | `CreateMeetingCommand` | command | `Meeting`         |                               |
 | `meetings` | `ListMeetingsQuery`    | query   | `Meeting[]`       |                               |
 | `meetings` | `GetMeetingQuery`      | query   | `Meeting`         | 404 not found / not the owner |

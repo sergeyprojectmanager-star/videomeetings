@@ -37,6 +37,7 @@ Backend: NestJS 12, TypeScript, ESM (`"type": "module"`).
 ## Authentication
 
 - `AuthModule` (`src/auth/`): `POST /auth/register` (201) and `POST /auth/login` (200) take `{ email, password }` and return `{ accessToken }`. Errors: 400 invalid body, 409 e-mail taken, 401 bad credentials (identical for an unknown e-mail and a wrong password).
+- `GET /auth/me` (behind `JwtAuthGuard`) returns `{ id, email }` of the token's user so a client can show who is signed in (the token itself only carries `sub`). It is a query (`GetCurrentUserQuery`); 401 when the token is bad or the user no longer exists. It never returns the password hash.
 - The module follows CQRS (see [docs/cqrs.md](docs/cqrs.md)): registration is a command (`RegisterUserCommand` → `RegisterUserHandler`), login is a query (`LoginQuery` → `LoginHandler`) because it changes no state.
 - `AccessTokenService` is the single place that builds the token payload; both handlers use it.
 - The token is a JWT from `@nestjs/jwt`: HS256, secret from the required `JWT_SECRET`, `sub` = user id, expires in 1 hour.

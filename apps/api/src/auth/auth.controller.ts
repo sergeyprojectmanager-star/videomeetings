@@ -1,6 +1,19 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { AuthResult } from './access-token.service.js';
+import { CurrentUser } from './current-user.decorator.js';
+import { type AuthenticatedUser, JwtAuthGuard } from './jwt-auth.guard.js';
+import {
+  GetCurrentUserQuery,
+  type UserProfile,
+} from './queries/get-current-user.query.js';
 import {
   loginSchema,
   registerSchema,
@@ -30,5 +43,12 @@ export class AuthController {
     @Body({ schema: loginSchema }) { email, password }: LoginDto,
   ): Promise<AuthResult> {
     return this.queryBus.execute(new LoginQuery(email, password));
+  }
+
+  /** Who the access token belongs to, so a client can show the signed-in user. */
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  me(@CurrentUser() user: AuthenticatedUser): Promise<UserProfile> {
+    return this.queryBus.execute(new GetCurrentUserQuery(user.id));
   }
 }

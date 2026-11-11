@@ -7,6 +7,7 @@ import { AccessTokenService } from './access-token.service.js';
 import { AuthController } from './auth.controller.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { RegisterUserHandler } from './commands/register-user.handler.js';
+import { GetCurrentUserHandler } from './queries/get-current-user.handler.js';
 import { LoginHandler } from './queries/login.handler.js';
 
 @Module({
@@ -32,6 +33,7 @@ import { LoginHandler } from './queries/login.handler.js';
     JwtAuthGuard,
     RegisterUserHandler,
     LoginHandler,
+    GetCurrentUserHandler,
     // Used standalone: only the scrypt hasher is needed, not the package's
     // session machinery (AuthenticationModule).
     { provide: PasswordHasher, useFactory: () => new PasswordHasher() },

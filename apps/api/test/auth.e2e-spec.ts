@@ -390,4 +390,53 @@ describe('Auth (e2e)', () => {
       });
     });
   });
+
+  describe('GET /auth/me', () => {
+    const me = (token?: string) => {
+      const req = http().get('/auth/me');
+      return token ? req.set('Authorization', `Bearer ${token}`) : req;
+    };
+
+    async function registerAndGetToken(email: string): Promise<string> {
+      const response = await register({ email, password: PASSWORD }).expect(
+        201,
+      );
+      return response.body.accessToken as string;
+    }
+
+    it('returns the id and e-mail of the token owner', async () => {
+      const email = uniqueEmail();
+      const token = await registerAndGetToken(email);
+      const [user] = await findUsers(email);
+
+      const response = await me(token).expect(200);
+
+      expect(response.body).toEqual({ id: user.id, email });
+    });
+
+    it('never returns the password or its hash', async () => {
+      const token = await registerAndGetToken(uniqueEmail());
+
+      const response = await me(token).expect(200);
+
+      expect(Object.keys(response.body).sort()).toEqual(['email', 'id']);
+      expect(JSON.stringify(response.body)).not.toContain('password');
+    });
+
+    it('answers 401 without a token', async () => {
+      await me().expect(401);
+    });
+
+    it('answers 401 for a malformed token', async () => {
+      await me('not-a-jwt').expect(401);
+    });
+
+    it('answers 401 when the user was deleted after the token was issued', async () => {
+      const email = uniqueEmail();
+      const token = await registerAndGetToken(email);
+      await pool.query('delete from users where email = $1', [email]);
+
+      await me(token).expect(401);
+    });
+  });
 });

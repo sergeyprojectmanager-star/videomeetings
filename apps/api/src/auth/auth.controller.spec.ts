@@ -1,6 +1,7 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { AuthController } from './auth.controller.js';
 import { RegisterUserCommand } from './commands/register-user.command.js';
+import { GetCurrentUserQuery } from './queries/get-current-user.query.js';
 import { LoginQuery } from './queries/login.query.js';
 
 describe('AuthController', () => {
@@ -68,6 +69,30 @@ describe('AuthController', () => {
       await expect(
         controller.login({ email: 'a@example.test', password: 'x' }),
       ).rejects.toThrow('bad credentials');
+    });
+  });
+
+  describe('me', () => {
+    it('dispatches a GetCurrentUserQuery for the authenticated user', async () => {
+      queryBus.execute.mockResolvedValue({
+        id: 'user-id',
+        email: 'jane@example.test',
+      });
+
+      const result = await controller.me({ id: 'user-id' });
+
+      expect(result).toEqual({ id: 'user-id', email: 'jane@example.test' });
+      expect(queryBus.execute).toHaveBeenCalledTimes(1);
+      const [query] = queryBus.execute.mock.calls[0];
+      expect(query).toBeInstanceOf(GetCurrentUserQuery);
+      expect(query).toMatchObject({ userId: 'user-id' });
+      expect(commandBus.execute).not.toHaveBeenCalled();
+    });
+
+    it('passes errors from the handler through', async () => {
+      queryBus.execute.mockRejectedValue(new Error('gone'));
+
+      await expect(controller.me({ id: 'user-id' })).rejects.toThrow('gone');
     });
   });
 });
